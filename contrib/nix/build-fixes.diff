@@ -1,0 +1,60 @@
+diff --git a/docs/cookbook/latex/default.pdf.do b/docs/cookbook/latex/default.pdf.do
+index 541b8ce..ef1f242 100644
+--- a/docs/cookbook/latex/default.pdf.do
++++ b/docs/cookbook/latex/default.pdf.do
+@@ -1,3 +1,3 @@
+ exec >&2
+ redo-ifchange "$2.dvi"
+-dvipdf "$2.dvi" "$3"
++dvipdf -o "$3" "$2.dvi"
+diff --git a/docs/md2man.py b/docs/md2man.py
+index 035d2ac..b5bdc56 100644
+--- a/docs/md2man.py
++++ b/docs/md2man.py
+@@ -1,5 +1,20 @@
+ import sys, os, markdown, re
+-from BeautifulSoup import BeautifulSoup
++from bs4 import BeautifulSoup, element
++
++def getattr(tag, attr, defaultvalue):
++    if attr == 'name':
++        if not tag.name:
++            return defaultvalue
++        else:
++            return tag.name
++    elif attr == 'contents':
++        if not isinstance(tag, element.NavigableString):
++            return tag.contents or defaultvalue
++    else:
++        if tag[attr]:
++            return tag[attr]
++        else:
++            return defaultvalue
+ 
+ def _split_lines(s):
+     return re.findall(r'([^\n]*\n?)', s)
+@@ -273,7 +288,7 @@ if AUTHOR:
+ 
+ html = markdown.markdown(inp)
+ open(htmlfile, 'w').write(html)
+-soup = BeautifulSoup(html, convertEntities=BeautifulSoup.HTML_ENTITIES)
++soup = BeautifulSoup(html, 'html.parser')
+ 
+ macro('.TH', PROD.upper(), SECTION, DATE, VENDOR, GROUPNAME)
+ macro('.ad', 'l')  # left justified
+diff --git a/redo/builder.py b/redo/builder.py
+index 94788aa..87c7e31 100644
+--- a/redo/builder.py
++++ b/redo/builder.py
+@@ -103,7 +103,10 @@ def await_log_reader():
+         # Since our stdout/stderr are attached to redo-log's stdin,
+         # this will notify redo-log that it's time to die (after it finishes
+         # reading the logs)
+-        out = open('/dev/tty', 'w')
++        if os.path.isfile(os.ctermid()):
++            out = open(os.ctermid(), 'w')
++        else:
++            out = open('/dev/null', 'w')
+         os.dup2(out.fileno(), 1)
+         os.dup2(out.fileno(), 2)
+         os.waitpid(log_reader_pid, 0)
