@@ -28,7 +28,7 @@ else
 	allrc=
 	redo-ifcreate "$S/all.rc.od"
 fi
-rc_include rc/_init.rc rc/CC.rc rc/zdefs.rc $allrc
+rc_include rc/_init.rc $allrc
 
 rc_helpmsg PREFIX "Change installation prefix (usually /usr/local)"
 
